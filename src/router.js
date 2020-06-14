@@ -21,12 +21,16 @@ function route(pathname, queryString, respone) {
     function articles(queryString) {
         var query = querystring.parse(queryString);
         if (query['title'] == undefined) {
-
+            //按关键字搜索文章
         } else {
             github.fetchFile('articles/' + query['title'] + '.md', (buffer) => {
                 var source = iconv.decode(buffer, 'gbk');
-                respone.write(source);
-                respone.end();
+                if (source == '404: Not Found')
+                    notfound();
+                else {
+                    respone.write(source);
+                    respone.end();
+                }
             })
         }
 
@@ -36,13 +40,28 @@ function route(pathname, queryString, respone) {
 
     }
 
-    function notfound() {
+    function resource(pathname) {
+        github.fetchFile(pathname, (buffer) => {
+            var source = iconv.decode(buffer, 'gbk');
+            if (source == '404: Not Found')
+                notfound();
+            else {
+                respone.write(buffer);
+                respone.end();
+            }
+        })
+    }
 
+    function notfound() {
+        github.fetchFile('404.html', (buffer) => {
+            var source = iconv.decode(buffer, 'gbk');
+            respone.write(source);
+            respone.end();
+        })
     }
 
     if (pathname == '/') homePage();
     else if (pathname == '/articles') articles(queryString);
-    // else if () extendPage();
-    else notfound();
+    else resource(pathname);
 }
 exports.route = route;
